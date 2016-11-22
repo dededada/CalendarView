@@ -3,6 +3,7 @@
 //  CalendarView
 //
 //  Created by Wito Chandra on 05/04/16.
+//  Modified by Bungkhus.
 //  Copyright © 2016 Wito Chandra. All rights reserved.
 //
 
@@ -29,7 +30,7 @@ public class CalendarDayCell: UICollectionViewCell {
     
     public override func awakeFromNib() {
         super.awakeFromNib()
-    
+        
         viewSelectedCircle.backgroundColor = CalendarViewTheme.instance.colorForSelectedDate
         viewSelectedCircle.layer.cornerRadius = viewSelectedCircle.frame.width / 2
         viewSelectedCircle.layer.masksToBounds = true
@@ -38,10 +39,10 @@ public class CalendarDayCell: UICollectionViewCell {
         viewNextRange.backgroundColor = CalendarViewTheme.instance.colorForDatesRange
     }
     
-    public func updateWithDate(date: NSDate, state: CalendarDayCellState, isCurrentMonth: Bool) {
+    public func updateWithDate(date: NSDate, state: CalendarDayCellState, isCurrentMonth: Bool, isHoliday: Bool) {
         self.date = date
         self.state = state
-    
+        
         let calendar = CalendarViewUtils.instance.calendar
         let components = calendar.components(.Day, fromDate: date)
         labelDay.text = "\(components.day)"
@@ -55,7 +56,11 @@ public class CalendarDayCell: UICollectionViewCell {
         }
         switch state {
         case .Normal:
-            if isCurrentMonth {
+            if isCurrentMonth && isHoliday {
+                labelDay.textColor = CalendarViewTheme.instance.textColorForHoliday
+            } else if !isCurrentMonth && isHoliday {
+                labelDay.textColor = CalendarViewTheme.instance.textColorForHolidayDisabled
+            } else if isCurrentMonth {
                 labelDay.textColor = CalendarViewTheme.instance.textColorForNormalDay
             } else {
                 labelDay.textColor = CalendarViewTheme.instance.textColorForDisabledDay
@@ -64,7 +69,11 @@ public class CalendarDayCell: UICollectionViewCell {
             viewNextRange.hidden = true
             viewPreviousRange.hidden = true
         case .Disabled:
-            labelDay.textColor = CalendarViewTheme.instance.textColorForDisabledDay
+            if isHoliday {
+                labelDay.textColor = CalendarViewTheme.instance.textColorForHolidayDisabled
+            } else {
+                labelDay.textColor = CalendarViewTheme.instance.textColorForDisabledDay
+            }
             viewSelectedCircle.hidden = true
             viewNextRange.hidden = true
             viewPreviousRange.hidden = true
@@ -74,7 +83,11 @@ public class CalendarDayCell: UICollectionViewCell {
             viewNextRange.hidden = !hasNext
             viewPreviousRange.hidden = true
         case .Range:
-            labelDay.textColor = CalendarViewTheme.instance.textColorForNormalDay
+            if isHoliday {
+                labelDay.textColor = CalendarViewTheme.instance.textColorForHoliday
+            } else {
+                labelDay.textColor = CalendarViewTheme.instance.textColorForNormalDay
+            }
             viewSelectedCircle.hidden = true
             viewNextRange.hidden = false
             viewPreviousRange.hidden = false

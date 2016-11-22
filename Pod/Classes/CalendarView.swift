@@ -3,6 +3,7 @@
 //  CalendarView
 //
 //  Created by Wito Chandra on 05/04/16.
+//  Modified by Bungkhus.
 //  Copyright © 2016 Wito Chandra. All rights reserved.
 //
 
@@ -31,6 +32,7 @@ public class CalendarView: UIView {
     private var currentFirstDayOfMonth: NSDate
     private var firstDate: NSDate
     private var endDate: NSDate
+    private var holidaysDate: [NSDate]
     
     private var lastFrame = CGRectZero
     private var beginIndex: Int?
@@ -96,6 +98,7 @@ public class CalendarView: UIView {
         firstDate = minDate.firstDayOfCurrentMonth().lastSunday()
         endDate = maxDate.endDayOfCurrentMonth().dateByAddingDay(7).nextSaturday()
         currentFirstDayOfMonth = minDate.firstDayOfCurrentMonth()
+        holidaysDate = []
         
         super.init(frame: frame)
         loadViews()
@@ -107,6 +110,7 @@ public class CalendarView: UIView {
         firstDate = minDate.firstDayOfCurrentMonth().lastSunday()
         endDate = maxDate.endDayOfCurrentMonth().dateByAddingDay(7).nextSaturday()
         currentFirstDayOfMonth = minDate.firstDayOfCurrentMonth()
+        holidaysDate = []
         
         super.init(coder: aDecoder)
         loadViews()
@@ -116,7 +120,7 @@ public class CalendarView: UIView {
     
     public override func layoutSubviews() {
         super.layoutSubviews()
-    
+        
         if !CGRectEqualToRect(lastFrame, frame) {
             lastFrame = frame
             collectionView?.reloadData()
@@ -133,7 +137,7 @@ public class CalendarView: UIView {
         view.frame = bounds
         view.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
         addSubview(view)
-    
+        
         gestureDragDate = UIPanGestureRecognizer(target: self, action: #selector(CalendarView.handleDragDate(_:)))
         gestureDragDate.delegate = self
         
@@ -163,6 +167,12 @@ public class CalendarView: UIView {
         self.maxDate = maxDate.normalizeTime()
         
         // scrollToMonthOfDate(minDate)
+        collectionView.reloadData()
+    }
+    
+    public func setHolidaysDate(date: NSDate) {
+        self.holidaysDate.append(date)
+        
         collectionView.reloadData()
     }
     
@@ -199,7 +209,7 @@ public class CalendarView: UIView {
         viewTitleContainer.backgroundColor = CalendarViewTheme.instance.bgColorForMonthContainer
         viewDaysOfWeekContainer.backgroundColor = CalendarViewTheme.instance.bgColorForDaysOfWeekContainer
         viewBackground.backgroundColor = CalendarViewTheme.instance.bgColorForOtherMonth
-        labelSunday.textColor = CalendarViewTheme.instance.textColorForDayOfWeek
+        labelSunday.textColor = CalendarViewTheme.instance.textColorForHoliday
         labelMonday.textColor = CalendarViewTheme.instance.textColorForDayOfWeek
         labelTuesday.textColor = CalendarViewTheme.instance.textColorForDayOfWeek
         labelWednesday.textColor = CalendarViewTheme.instance.textColorForDayOfWeek
@@ -277,6 +287,12 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
     public func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         let date = firstDate.dateByAddingDay(indexPath.row)
         let disabled = date.normalizeTime().compare(minDate) == NSComparisonResult.OrderedAscending
+        var isHoliday: Bool
+        if indexPath.row % 7 == 0 {
+            isHoliday = true
+        } else {
+            isHoliday = false
+        }
         let state: CalendarDayCellState
         if disabled {
             state = .Disabled
@@ -294,7 +310,7 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
         let currentComponents = calendar.components([.Month, .Year], fromDate: currentFirstDayOfMonth)
         let isCurrentMonth = components.month == currentComponents.month && components.year == currentComponents.year
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("DayCell", forIndexPath: indexPath) as! CalendarDayCell
-        cell.updateWithDate(date, state: state, isCurrentMonth: isCurrentMonth)
+        cell.updateWithDate(date, state: state, isCurrentMonth: isCurrentMonth, isHoliday: isHoliday)
         return cell
     }
     
@@ -376,9 +392,9 @@ extension CalendarView: UIGestureRecognizerDelegate {
     public func handleDragDate(gestureRecognizer: UIGestureRecognizer) {
         let point = gestureRecognizer.locationInView(collectionView)
         if let indexPath = collectionView.indexPathForItemAtPoint(point),
-                let cell = collectionView.cellForItemAtIndexPath(indexPath) as? CalendarDayCell,
-                let beginIndex = beginIndex,
-                let endIndex = endIndex
+            let cell = collectionView.cellForItemAtIndexPath(indexPath) as? CalendarDayCell,
+            let beginIndex = beginIndex,
+            let endIndex = endIndex
         {
             switch cell.state {
             case .Disabled:
