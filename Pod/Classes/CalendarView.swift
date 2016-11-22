@@ -32,7 +32,7 @@ public class CalendarView: UIView {
     private var currentFirstDayOfMonth: NSDate
     private var firstDate: NSDate
     private var endDate: NSDate
-    private var holidaysDate: [NSDate]
+    private var holidaysDate = [NSDate]()
     
     private var lastFrame = CGRectZero
     private var beginIndex: Int?
@@ -98,7 +98,6 @@ public class CalendarView: UIView {
         firstDate = minDate.firstDayOfCurrentMonth().lastSunday()
         endDate = maxDate.endDayOfCurrentMonth().dateByAddingDay(7).nextSaturday()
         currentFirstDayOfMonth = minDate.firstDayOfCurrentMonth()
-        holidaysDate = []
         
         super.init(frame: frame)
         loadViews()
@@ -110,7 +109,6 @@ public class CalendarView: UIView {
         firstDate = minDate.firstDayOfCurrentMonth().lastSunday()
         endDate = maxDate.endDayOfCurrentMonth().dateByAddingDay(7).nextSaturday()
         currentFirstDayOfMonth = minDate.firstDayOfCurrentMonth()
-        holidaysDate = []
         
         super.init(coder: aDecoder)
         loadViews()
@@ -293,6 +291,13 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
         } else {
             isHoliday = false
         }
+        
+        for holiday in holidaysDate {
+            if date.equalToDate(holiday.normalizeTime()) {
+                isHoliday = true
+            }
+        }
+        
         let state: CalendarDayCellState
         if disabled {
             state = .Disabled
@@ -371,6 +376,22 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
             cellWidth = cellWidth + (width - (cellWidth * 7))
         }
         return cellWidth
+    }
+}
+
+extension NSDate {
+    
+    func equalToDate(dateToCompare: NSDate) -> Bool {
+        //Declare Variables
+        var isEqualTo = false
+        
+        //Compare Values
+        if self.compare(dateToCompare) == NSComparisonResult.OrderedSame {
+            isEqualTo = true
+        }
+        
+        //Return Result
+        return isEqualTo
     }
 }
 
