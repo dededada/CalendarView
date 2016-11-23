@@ -292,10 +292,8 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
             isHoliday = false
         }
         
-        for holiday in holidaysDate {
-            if date.equalToDate(holiday.normalizeTime()) {
-                isHoliday = true
-            }
+        if let found = holidaysDate.indexOf({$0.equalToDate(date)}) {
+            isHoliday = true
         }
         
         let state: CalendarDayCellState
