@@ -174,6 +174,12 @@ public class CalendarView: UIView {
         collectionView.reloadData()
     }
     
+    public func removeHolidays() {
+        self.holidaysDate.removeAll()
+        
+        collectionView.reloadData()
+    }
+    
     public func setBeginDate(beginDate: NSDate?, finishDate: NSDate?) {
         if beginDate == nil {
             beginIndex = nil
