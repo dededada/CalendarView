@@ -310,7 +310,7 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
         let calendar = CalendarViewUtils.instance.calendar
         let components = calendar.components(.Month, fromDate: firstDate, toDate: endDate, options: [])
         let diff = getDiffDay(endDate.endDayOfCurrentMonth(), endDate)
-        return (components.month-1) * 42 - 1
+        return (components.month-1) * 42
     }
     
     public func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
