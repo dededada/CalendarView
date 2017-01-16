@@ -127,7 +127,6 @@ public class CalendarView: UIView {
             lastFrame = frame
             collectionView?.reloadData()
         }
-        
         collectionView.layoutIfNeeded()
         scrollToMonthOfDate(currentFirstDayOfMonth)
     }
@@ -157,6 +156,14 @@ public class CalendarView: UIView {
         let c = Int(floor(floor(Double(i)/6.0)/7.0)*42)
         let i2 = a+b+c
         return i2
+    }
+    
+    public func diffDay(newRow: Int) -> Int {
+        let sectionMonth = Int(floor(Double(newRow)/42.0))
+        let a = minDate.firstDayOfCurrentMonth().dateByAddingMonth(sectionMonth).lastSunday()
+        let diff_a_firstDate = getDiffDay(firstDate, a)
+        let diffDay = (sectionMonth*42) - diff_a_firstDate
+        return diffDay
     }
     
     public func scrollToMonthOfDate(date: NSDate) {
@@ -311,27 +318,21 @@ extension CalendarView {
 extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     
     public func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-//        let calendar = CalendarViewUtils.instance.calendar
-//        let components = calendar.components(.Day, fromDate: firstDate, toDate: endDate, options: [])
-//        return components.day + 1
-        return daySum
+        let calendar = CalendarViewUtils.instance.calendar
+        let components = calendar.components(.Month, fromDate: firstDate, toDate: endDate, options: [])
+        return (components.month-1) * 42
     }
     
     public func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         
-        var newRow = convertIndex(indexPath.row)
+        let rowConverted = convertIndex(indexPath.row)
+        let diff = diffDay(rowConverted)
+        let newIndexRow = rowConverted - diff
         
-        let sectionMonth = Int(floor(Double(newRow)/42.0))
-        let a = minDate.firstDayOfCurrentMonth().dateByAddingMonth(sectionMonth).lastSunday()
-        let diff_a_firstDate = getDiffDay(firstDate, a)
-        var diffDay = (sectionMonth*42) - diff_a_firstDate
-        
-        var row2 = newRow - diffDay
-        
-        let date = firstDate.dateByAddingDay(row2)
+        let date = firstDate.dateByAddingDay(newIndexRow)
         let disabled = date.normalizeTime().compare(minDate) == NSComparisonResult.OrderedAscending
         var isHoliday: Bool
-        if (newRow-diffDay) % 7 == 0 {
+        if newIndexRow % 7 == 0 {
             isHoliday = true
         } else {
             isHoliday = false
@@ -344,11 +345,11 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
         let state: CalendarDayCellState
         if disabled {
             state = .Disabled
-        } else if let beginIndex = beginIndex where beginIndex == (newRow-diffDay) {
+        } else if let beginIndex = beginIndex where beginIndex == newIndexRow {
             state = .Start(hasNext: endIndex != nil)
-        } else if let endIndex = endIndex where endIndex == (newRow-diffDay) {
+        } else if let endIndex = endIndex where endIndex == newIndexRow {
             state = .End
-        } else if let beginIndex = beginIndex, let endIndex = endIndex where (newRow-diffDay) > beginIndex && (newRow-diffDay) < endIndex {
+        } else if let beginIndex = beginIndex, let endIndex = endIndex where newIndexRow > beginIndex && newIndexRow < endIndex {
             state = .Range
         } else {
             state = .Normal
@@ -389,41 +390,33 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
             break
         }
         
-        let newRow = convertIndex(indexPath.row)
-        
-        let sectionMonth = Int(floor(Double(newRow)/42.0))
-        let a = minDate.firstDayOfCurrentMonth().dateByAddingMonth(sectionMonth).lastSunday()
-        let diff_a_firstDate = getDiffDay(firstDate, a)
-        var diffDay = (sectionMonth*42) - diff_a_firstDate
+        let rowConverted = convertIndex(indexPath.row)
+        let diff = diffDay(rowConverted)
+        let newIndexRow = rowConverted - diff
         
         if beginIndex == nil {
-            beginIndex = (newRow-diffDay)
+            beginIndex = newIndexRow
             delegate?.calendarView(self, didUpdateBeginDate: date)
-        } else if let beginIndex = beginIndex where (newRow-diffDay) <= beginIndex && endIndex == nil {
-            self.beginIndex = (newRow-diffDay)
+        } else if let beginIndex = beginIndex where newIndexRow <= beginIndex && endIndex == nil {
+            self.beginIndex = newIndexRow
             delegate?.calendarView(self, didUpdateBeginDate: date)
-        } else if let beginIndex = beginIndex where (newRow-diffDay) > beginIndex && endIndex == nil {
-            endIndex = (newRow-diffDay)
+        } else if let beginIndex = beginIndex where newIndexRow > beginIndex && endIndex == nil {
+            endIndex = newIndexRow
             delegate?.calendarView(self, didUpdateFinishDate: date)
             let calendar = CalendarViewUtils.instance.calendar
             let components = calendar.components([.Month, .Year], fromDate: date)
             let currentComponents = calendar.components([.Month, .Year], fromDate: currentFirstDayOfMonth)
-//            if components.month != currentComponents.month {
-//                scrollToNextMonth()
-//            }
         } else if beginIndex != nil && endIndex != nil {
-            beginIndex = (newRow-diffDay)
+            beginIndex = newIndexRow
             endIndex = nil
             delegate?.calendarView(self, didUpdateBeginDate: date)
             delegate?.calendarView(self, didUpdateFinishDate: nil)
         }
         collectionView.reloadData()
-        print("select")
     }
     
     public func scrollViewWillBeginDragging(scrollView: UIScrollView) {
         lastConstantOffset = scrollView.contentOffset
-        print("beginScroll")
     }
     
     public func scrollViewDidEndDecelerating(scrollView: UIScrollView) {
@@ -433,7 +426,6 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
         else if lastConstantOffset.x > scrollView.contentOffset.x {
             self.scrollToPreviousMonth()
         }
-        print("endScroll")
     }
     
     private func widthForCellAtIndexPath(indexPath: NSIndexPath) -> CGFloat {
@@ -470,15 +462,22 @@ extension CalendarView: UIGestureRecognizerDelegate {
         if let indexPath = collectionView.indexPathForItemAtPoint(point),
             let beginIndex = beginIndex,
             let endIndex = endIndex
-            where indexPath.row == beginIndex || indexPath.row == endIndex
+            where convertIndex(indexPath.row) - diffDay(convertIndex(indexPath.row)) == beginIndex || convertIndex(indexPath.row) - diffDay(convertIndex(indexPath.row)) == endIndex
         {
-            draggingBeginDate = indexPath.row == beginIndex
+            collectionView.scrollEnabled = false
+            draggingBeginDate = convertIndex(indexPath.row) - diffDay(convertIndex(indexPath.row)) == beginIndex
             return true
         }
         return false
     }
     
     public func handleDragDate(gestureRecognizer: UIGestureRecognizer) {
+        
+        if(gestureRecognizer.state == .Ended)
+        {
+            collectionView.scrollEnabled = true
+        }
+        
         let point = gestureRecognizer.locationInView(collectionView)
         if let indexPath = collectionView.indexPathForItemAtPoint(point),
             let cell = collectionView.cellForItemAtIndexPath(indexPath) as? CalendarDayCell,
@@ -491,7 +490,7 @@ extension CalendarView: UIGestureRecognizerDelegate {
             default:
                 break
             }
-            let index = indexPath.row
+            let index = convertIndex(indexPath.row) - diffDay(convertIndex(indexPath.row))
             if draggingBeginDate {
                 if index < endIndex {
                     self.beginIndex = index
