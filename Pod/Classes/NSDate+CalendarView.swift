@@ -17,6 +17,13 @@ extension NSDate {
         return calendar.dateByAddingComponents(diff, toDate: self, options: [])!
     }
     
+    func dateByAddingMonth(month: Int) -> NSDate {
+        var calendar = CalendarViewUtils.instance.calendar
+        var diff = NSDateComponents()
+        diff.month = month
+        return calendar.dateByAddingComponents(diff, toDate: self, options: [])!
+    }
+    
     func lastSunday() -> NSDate {
         let calendar = CalendarViewUtils.instance.calendar
         let components = calendar.components(.Weekday, fromDate: self)
