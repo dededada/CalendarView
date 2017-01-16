@@ -78,7 +78,11 @@ public class CalendarDayCell: UICollectionViewCell {
             viewNextRange.hidden = true
             viewPreviousRange.hidden = true
         case let .Start(hasNext):
-            labelDay.textColor = CalendarViewTheme.instance.textColorForSelectedDay
+            if isHoliday {
+                labelDay.textColor = CalendarViewTheme.instance.textColorForHoliday
+            } else {
+                labelDay.textColor = CalendarViewTheme.instance.textColorForSelectedDay
+            }
             viewSelectedCircle.hidden = false
             viewNextRange.hidden = !hasNext
             viewPreviousRange.hidden = true
@@ -92,7 +96,11 @@ public class CalendarDayCell: UICollectionViewCell {
             viewNextRange.hidden = false
             viewPreviousRange.hidden = false
         case .End:
-            labelDay.textColor = CalendarViewTheme.instance.textColorForSelectedDay
+            if isHoliday {
+                labelDay.textColor = CalendarViewTheme.instance.textColorForHoliday
+            } else {
+                labelDay.textColor = CalendarViewTheme.instance.textColorForSelectedDay
+            }
             viewSelectedCircle.hidden = false
             viewNextRange.hidden = true
             viewPreviousRange.hidden = false
