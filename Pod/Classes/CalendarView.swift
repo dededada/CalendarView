@@ -38,12 +38,9 @@ public class CalendarView: UIView {
     private var beginIndex: Int?
     private var endIndex: Int?
     private var draggingBeginDate = false
+    private var lastConstantOffset = CGPoint(x: 0, y: 0)
     
     private let dateFormatter = NSDateFormatter()
-    
-    private var currentIndexScroll = 0
-    private let daySum = (42*24)
-    private var lastConstantOffset = CGPoint(x: 0, y: 0)
     
     private var minDate: NSDate {
         didSet {
@@ -170,10 +167,10 @@ public class CalendarView: UIView {
         if date.compare(maxDate.firstDayOfCurrentMonth()) != .OrderedDescending && date.compare(firstDate) != .OrderedAscending {
             currentFirstDayOfMonth = date.firstDayOfCurrentMonth()
             let calendar = CalendarViewUtils.instance.calendar
-            let diff = calendar.components(.Day, fromDate: firstDate, toDate: currentFirstDayOfMonth, options: [])
+            let diff = calendar.components(.Month, fromDate: firstDate, toDate: currentFirstDayOfMonth, options: [])
+            let month = diff.month * 42
+            collectionView.scrollToItemAtIndexPath(NSIndexPath(forRow: month, inSection: 0), atScrollPosition: .Left, animated: true)
         }
-        let i = currentIndexScroll * 42
-        collectionView.scrollToItemAtIndexPath(NSIndexPath(forRow: i, inSection: 0), atScrollPosition: .Left, animated: true)
         collectionView.reloadData()
         updateMonthYearViews()
     }
@@ -279,10 +276,6 @@ extension CalendarView {
     }
     
     private func scrollToPreviousMonth() {
-        currentIndexScroll = currentIndexScroll - 1
-        if currentIndexScroll < 0 {
-            currentIndexScroll = 0
-        }
         let calendar = CalendarViewUtils.instance.calendar
         let diffComponents = NSDateComponents()
         diffComponents.month = -1
@@ -293,10 +286,6 @@ extension CalendarView {
     }
     
     private func scrollToNextMonth() {
-        currentIndexScroll = currentIndexScroll + 1
-        if currentIndexScroll > 23 {
-            currentIndexScroll = 23
-        }
         let calendar = CalendarViewUtils.instance.calendar
         let diffComponents = NSDateComponents()
         diffComponents.month = 1
@@ -320,11 +309,11 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
     public func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         let calendar = CalendarViewUtils.instance.calendar
         let components = calendar.components(.Month, fromDate: firstDate, toDate: endDate, options: [])
-        return (components.month-1) * 42
+        let diff = getDiffDay(endDate.endDayOfCurrentMonth(), endDate)
+        return (components.month-1) * 42 - 1
     }
     
     public func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-        
         let rowConverted = convertIndex(indexPath.row)
         let diff = diffDay(rowConverted)
         let newIndexRow = rowConverted - diff
