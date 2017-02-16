@@ -33,6 +33,9 @@ public class CalendarView: UIView {
     private var firstDate: NSDate
     private var endDate: NSDate
     private var holidaysDate = [NSDate]()
+    private var holidaysName = [String]()
+    private var holidaysDatePerMonth = [NSDate]()
+    private var holidaysNamePerMonth = [String]()
     
     private var lastFrame = CGRectZero
     private var beginIndex: Int?
@@ -171,6 +174,8 @@ public class CalendarView: UIView {
             let month = diff.month * 42
             collectionView.scrollToItemAtIndexPath(NSIndexPath(forRow: month, inSection: 0), atScrollPosition: .Left, animated: true)
         }
+        holidaysDatePerMonth.removeAll()
+        holidaysNamePerMonth.removeAll()
         collectionView.reloadData()
         updateMonthYearViews()
     }
@@ -183,18 +188,33 @@ public class CalendarView: UIView {
         self.maxDate = maxDate.normalizeTime()
         
         // scrollToMonthOfDate(minDate)
+        holidaysDatePerMonth.removeAll()
+        holidaysNamePerMonth.removeAll()
         collectionView.reloadData()
     }
     
     public func setHolidaysDate(date: NSDate) {
         self.holidaysDate.append(date)
         
+        holidaysDatePerMonth.removeAll()
+        holidaysNamePerMonth.removeAll()
+        collectionView.reloadData()
+    }
+    
+    public func setHolidaysName(name: String) {
+        self.holidaysName.append(name)
+        
+        holidaysDatePerMonth.removeAll()
+        holidaysNamePerMonth.removeAll()
         collectionView.reloadData()
     }
     
     public func removeHolidays() {
         self.holidaysDate.removeAll()
+        self.holidaysName.removeAll()
         
+        holidaysDatePerMonth.removeAll()
+        holidaysNamePerMonth.removeAll()
         collectionView.reloadData()
     }
     
@@ -202,6 +222,8 @@ public class CalendarView: UIView {
         if beginDate == nil {
             beginIndex = nil
             endIndex = nil
+            holidaysDatePerMonth.removeAll()
+            holidaysNamePerMonth.removeAll()
             collectionView.reloadData()
             return
         }
@@ -223,6 +245,8 @@ public class CalendarView: UIView {
             } else {
                 endIndex = nil
             }
+            holidaysDatePerMonth.removeAll()
+            holidaysNamePerMonth.removeAll()
             collectionView.reloadData()
         }
     }
@@ -254,6 +278,8 @@ public class CalendarView: UIView {
         
         updateMonthYearViews()
         
+        holidaysDatePerMonth.removeAll()
+        holidaysNamePerMonth.removeAll()
         collectionView.reloadData()
     }
 }
@@ -327,10 +353,6 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
             isHoliday = false
         }
         
-        if let found = holidaysDate.indexOf({$0.equalToDate(date)}) {
-            isHoliday = true
-        }
-        
         let state: CalendarDayCellState
         if disabled {
             state = .Disabled
@@ -347,6 +369,17 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
         let components = calendar.components([.Month, .Year], fromDate: date)
         let currentComponents = calendar.components([.Month, .Year], fromDate: currentFirstDayOfMonth)
         let isCurrentMonth = components.month == currentComponents.month && components.year == currentComponents.year
+        
+        if let found = holidaysDate.indexOf({$0.equalToDate(date)}) {
+            isHoliday = true
+            if isCurrentMonth {
+//                print("\(date)")
+                holidaysNamePerMonth.append(holidaysName[found])
+                holidaysDatePerMonth.append(date)
+                delegate?.calendarView(self, didScrollToMonth: holidaysDatePerMonth, holidaysName: holidaysNamePerMonth)
+            }
+        }
+        
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier("DayCell", forIndexPath: indexPath) as! CalendarDayCell
         cell.updateWithDate(date, state: state, isCurrentMonth: isCurrentMonth, isHoliday: isHoliday)
         return cell
@@ -401,11 +434,15 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
             delegate?.calendarView(self, didUpdateBeginDate: date)
             delegate?.calendarView(self, didUpdateFinishDate: nil)
         }
+        holidaysDatePerMonth.removeAll()
+        holidaysNamePerMonth.removeAll()
         collectionView.reloadData()
     }
     
     public func scrollViewWillBeginDragging(scrollView: UIScrollView) {
         lastConstantOffset = scrollView.contentOffset
+        holidaysDatePerMonth.removeAll()
+        holidaysNamePerMonth.removeAll()
     }
     
     public func scrollViewDidEndDecelerating(scrollView: UIScrollView) {
@@ -415,6 +452,7 @@ extension CalendarView: UICollectionViewDataSource, UICollectionViewDelegateFlow
         else if lastConstantOffset.x > scrollView.contentOffset.x {
             self.scrollToPreviousMonth()
         }
+        delegate?.calendarView(self, didScrollToMonth: holidaysDatePerMonth, holidaysName: holidaysNamePerMonth)
     }
     
     private func widthForCellAtIndexPath(indexPath: NSIndexPath) -> CGFloat {
@@ -504,6 +542,8 @@ extension CalendarView: UIGestureRecognizerDelegate {
                 if let index = self.endIndex where index != endIndex {
                     delegate?.calendarView(self, didUpdateFinishDate: firstDate.dateByAddingDay(index))
                 }
+                holidaysDatePerMonth.removeAll()
+                holidaysNamePerMonth.removeAll()
                 collectionView.reloadData()
             }
         }
