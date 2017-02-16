@@ -176,6 +176,7 @@ public class CalendarView: UIView {
         }
         holidaysDatePerMonth.removeAll()
         holidaysNamePerMonth.removeAll()
+        delegate?.calendarView(self, didScrollToMonth: holidaysDatePerMonth, holidaysName: holidaysNamePerMonth)
         collectionView.reloadData()
         updateMonthYearViews()
     }
