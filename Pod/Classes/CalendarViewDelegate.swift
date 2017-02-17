@@ -12,5 +12,5 @@ public protocol CalendarViewDelegate {
     
     func calendarView(calendarView: CalendarView, didUpdateBeginDate beginDate: NSDate?)
     func calendarView(calendarView: CalendarView, didUpdateFinishDate finishDate: NSDate?)
-    func calendarView(calendarView: CalendarView, didScrollToMonth holidaysDate: [NSDate]?, holidaysName: [String]?)
+    func calendarView(calendarView: CalendarView, didScrollToMonth holidaysDate: [(NSDate, String)]?)
 }
