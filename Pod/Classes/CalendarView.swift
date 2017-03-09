@@ -133,7 +133,7 @@ public class CalendarView: UIView {
     // MARK: - Methods
     
     private func loadViews() {
-        let view = CalendarViewUtils.instance.bundle.loadNibNamed("CalendarView", owner: self, options: nil).first as! UIView
+        let view = CalendarViewUtils.instance.bundle.loadNibNamed("CalendarView", owner: self, options: nil)!.first as! UIView
         view.frame = bounds
         view.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
         addSubview(view)
